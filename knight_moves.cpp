@@ -9,13 +9,29 @@ void addEdge(set<int> graph[], int u, int v);
 void printGraph(set<int> graph[]);
 void initializeGraph(set<int> graph[]);
 int getNodeIdentifier(int i, int j);
+int getNodeIdentifierFromBoard(char v[2]);
 
 int main()
 {
     set<int> graph[BOARD_SIDE_SIZE * 10 + BOARD_SIDE_SIZE];
     initializeGraph(graph);
-    printGraph(graph);
+
+    char v1[3], v2[3];
+
+    cin >> v1 >> v2;
+    int i1 = getNodeIdentifierFromBoard(v1);
+    int i2 = getNodeIdentifierFromBoard(v2);
+
+    cout << i1 << ' ' << i2 << endl;
+
     return 0;
+}
+
+int getNodeIdentifierFromBoard(char v[2])
+{
+    int horizontal = v[0];
+    int vertical = v[1];
+    return ((horizontal - 97) * 10) + (vertical - 49);
 }
 
 int getNodeIdentifier(int i, int j)
