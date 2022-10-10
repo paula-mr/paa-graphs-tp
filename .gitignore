@@ -3,4 +3,6 @@
 *.exe
 knight_moves
 santa_claus
+contamination
+output.txt
 .DS_STORE

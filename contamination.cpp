@@ -19,8 +19,8 @@ int main()
         if (n == 0)
             break;
 
-        vector<int>* graph = (vector<int>*) malloc(((n*m) + 1) * sizeof(vector<int>));
-        char* graphValues = (char*) malloc((n*m) + 1);
+        vector<int> graph[2501];
+        char graphValues[2501];
         initializeGraph(graph, n, m);
         for (int i=0; i<n; i++) {
             for (int j=0; j<m; j++) {
@@ -33,9 +33,6 @@ int main()
 
         projectContamination(graph, graphValues, n, m);
         printMap(graphValues, n, m);
-
-        free(graph);
-        free(graphValues);
     }
 
     return 0;
