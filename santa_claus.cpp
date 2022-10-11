@@ -30,7 +30,7 @@ int main()
             addEdge(&graph, city1, city2, distance);
         }
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < m; i++) {
             dsuParents[i] = -1;
             dsuRanks[i] = 1;
         }
@@ -81,26 +81,18 @@ void sortEdges(vector<vector<int> >* graph, int size)
 
 
 int partition(vector<vector<int> >* graph, int first, int last) {
-    int pivotIndex = first + floor((last-first)/2);
-    int pivotDistance = graph->at(pivotIndex)[2];
-    int i = first, j = last;
+    int pivot = graph->at(first)[2];
+    int index = first;
 
-    while (i < j) {
-        while (i <= last && graph->at(i)[2] < pivotDistance) {
-            i++;
+    for (int i=first+1; i<=last; i++) {
+        if (graph->at(i)[2] <= pivot) {
+            index++;
+            graph->at(index).swap(graph->at(i));
         }
-        while (j >= first && graph->at(j)[2] > pivotDistance) {
-            j--;
-        }
-        if (i < j) {
-            if (i == pivotIndex) pivotIndex = j;
-            if (j == pivotIndex) pivotIndex = i;
-            graph->at(i).swap(graph->at(j));
-            i++;
-            j--;
-        } 
     }
-    return pivotIndex;
+
+    graph->at(first).swap(graph->at(index));
+    return index;
 }
 
 void quickSort(vector<vector<int> >* graph, int first, int last) {
