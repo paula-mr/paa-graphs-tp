@@ -1,14 +1,17 @@
 #include <iostream>
+#include <vector>
+#include <math.h>
 
 using namespace std;
 
-#define BOARD_SIDE_SIZE 8
+void addEdge(vector<vector<int> >* graph, int u, int v, int weight);
+int getMST(vector<vector<int> >* graph, int parents[], int ranks[], int size);
+void sortEdges(vector<vector<int> >* graph, int size);
+int partition(vector<vector<int> >* graph, int first, int last);
+void quickSort(vector<vector<int> >* graph, int first, int last);
+int findDSU(int parents[], int i);
+void uniteDSU(int parents[], int ranks[], int size, int x, int y);
 
-void addEdge(short int** graph, int u, int v, int weight);
-int* getMST(short int** graph, int size);
-int getMinKeyNotInMST(int keys[], int includedInMst[], int size);
-int getDistance(short int** graph, int parents[], int size);
-int getEdgeDistance(short int** graph, int u, int v);
 
 int main()
 {
@@ -16,92 +19,114 @@ int main()
     cin >> m >> n;
     while (m > 0)
     {
-        short int** graph = (short int**) malloc(m*sizeof(int *));
-        for (int i=0; i<m; i++) {
-            graph[i] = (short int*) malloc(m*sizeof(int *));
-            for (int j=0; j<m; j++) {
-                graph[i][j] = INT16_MAX;
-            }
-        }
+        vector<vector<int> > graph;
+        int* dsuParents = (int*) malloc(n*sizeof(int));
+        int* dsuRanks = (int*) malloc(n*sizeof(int));
 
         for (int i = 0; i < n; i++)
         {
             int city1, city2, distance;
             cin >> city1 >> city2 >> distance;
-            addEdge(graph, city1, city2, distance);
-            addEdge(graph, city2, city1, distance);
+            addEdge(&graph, city1, city2, distance);
         }
 
-        int* parents = getMST(graph, m);
-        int totalDistance = getDistance(graph, parents, m);
+        for (int i = 0; i < n; i++) {
+            dsuParents[i] = -1;
+            dsuRanks[i] = 1;
+        }
+
+        int totalDistance = getMST(&graph, dsuParents, dsuRanks, n);
         cout << totalDistance << "\n";
-
-        for (int i=0; i<m; i++) {
-            free(graph[i]);
-        }
-        free(graph);
-        free(parents);
         
+        free(dsuParents);
+        free(dsuRanks);
         cin >> m >> n;
     }
 
     return 0;
 }
 
-int getDistance(short int** graph, int parents[], int size){
-    int totalDistance = 0;
-    for (int i=1; i<size; i++) {
-        totalDistance += graph[i][parents[i]];
-    }
-    return totalDistance;
-}
-
-int* getMST(short int** graph, int size)
+int getMST(vector<vector<int> >* graph, int parents[], int ranks[], int size)
 {
-    int* parents = (int*)malloc(size * sizeof(int));
-    int* includedInMst = (int*)malloc(size * sizeof(int));
-    int* keys = (int*)malloc(size * sizeof(int));
+    sortEdges(graph, size);
+    int mstDistance = 0;
 
     for (int i=0; i<size; i++) {
-        keys[i] = INT16_MAX;
-        includedInMst[i] = false;
-    }
+        int city1 = graph->at(i)[0];
+        int city2 = graph->at(i)[1];
+        int distance = graph->at(i)[2];
 
-    keys[0] = 0;
-    parents[0] = -1;
-
-    for (int i=0; i<size-1; i++) {
-        int minKey = getMinKeyNotInMST(keys, includedInMst, size);
-        includedInMst[minKey] = true;
-
-        for (int j=0; j<size; j++) {
-            if (!includedInMst[j] && graph[minKey][j] < keys[j]) {
-                parents[j] = minKey;
-                keys[j] = graph[minKey][j];
-            }
+        if (findDSU(parents, city1) != findDSU(parents, city2)) {
+            uniteDSU(parents, ranks, size, city1, city2);
+            mstDistance += distance;
         }
     }
 
-    free(includedInMst);
-    free(keys);
-    return parents;
+    return mstDistance;
 }
 
-int getMinKeyNotInMST(int keys[], int includedInMst[], int size) {
-    int minValue = INT32_MAX, minIndex;
+void addEdge(vector<vector<int> >* graph, int u, int v, int weight)
+{   
+    vector<int> city;
+    city.push_back(u);
+    city.push_back(v);
+    city.push_back(weight);
+    graph->push_back(city);
+}
 
-    for (int i=0; i<size; i++) {
-        if (!includedInMst[i] && keys[i] < minValue) {
-            minValue = keys[i];
-            minIndex = i;
+void sortEdges(vector<vector<int> >* graph, int size)
+{   
+    quickSort(graph, 0, size-1);
+}
+
+
+int partition(vector<vector<int> >* graph, int first, int last) {
+    int pivotIndex = first + floor((last-first)/2);
+    int pivotDistance = graph->at(pivotIndex)[2];
+    int i = first, j = last;
+
+    while (i < j) {
+        while (i <= last && graph->at(i)[2] < pivotDistance) {
+            i++;
+        }
+        while (j >= first && graph->at(j)[2] > pivotDistance) {
+            j--;
+        }
+        if (i < j) {
+            if (i == pivotIndex) pivotIndex = j;
+            if (j == pivotIndex) pivotIndex = i;
+            graph->at(i).swap(graph->at(j));
+            i++;
+            j--;
+        } 
+    }
+    return pivotIndex;
+}
+
+void quickSort(vector<vector<int> >* graph, int first, int last) {
+    if (first < last) {
+        int partitionIndex = partition(graph, first, last);
+        quickSort(graph, first, partitionIndex-1);
+        quickSort(graph, partitionIndex+1, last);
+    }
+}
+
+int findDSU(int parents[], int i) {
+    if (parents[i] == -1) return i;
+    return findDSU(parents, parents[i]);
+}
+
+void uniteDSU(int parents[], int ranks[], int size, int x, int y) {
+    int setX = findDSU(parents, x);
+    int setY = findDSU(parents, y);
+
+    if (setX != setY) {
+        if (ranks[setX] < ranks[setY]) {
+            parents[setX] = setY;
+            ranks[setY] += ranks[setX];
+        } else {
+            parents[setY] = setX;
+            ranks[setX] += ranks[setY];
         }
     }
-
-    return minIndex;
-}
-
-void addEdge(short int** graph, int u, int v, int weight)
-{
-    graph[u][v] = weight;
-    graph[v][u] = weight;
 }
